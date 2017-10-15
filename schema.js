@@ -86,16 +86,18 @@ async function getDays(args) {
 
 async function getDistroUsage(args) {
     let rows;
-    if(args.distro) {
-        rows = await db.all(`SELECT * FROM distrousage WHERE distro="${args.distro}" ORDER BY id DESC LIMIT 50`);
-    } else if(args.date) {
-        rows = await db.all(`SELECT * FROM distrousage WHERE time="${args.date}"`);
-    } else {
-        rows = await db.all(`SELECT * FROM distrousage ORDER BY id DESC LIMIT 50`);
-    }
+
+    let { distro, date } = args;
+
+    let query = `SELECT * FROM distrousage
+        ${distro ? `where distro="${distro}"` : ''}
+        ${date && distro ? `and time="${date}"` : date ? `where time="${date}"`: ''}
+        ORDER BY id DESC LIMIT 50
+    `;
+
+    rows = await db.all(query);
 
     rows = rows.map(row => {
-        // console.log(row);
         return {
             date: row.time,
             distro: row.distro,
