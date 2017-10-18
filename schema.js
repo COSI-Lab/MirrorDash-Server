@@ -19,8 +19,8 @@ const db = new sqlite3.Database('mirrorband.sqlite');
 db.get = promisify(db.get);
 db.all = promisify(db.all);
 
-const DayEntry = new GraphQLObjectType({
-    name: 'DayEntry',
+const TimeEntry = new GraphQLObjectType({
+    name: 'TimeEntry',
     fields: () => ({
         date: {
             type: GraphQLString
@@ -48,12 +48,38 @@ const DistroUsageEntry = new GraphQLObjectType({
         },
         bytes: {
             type: BigInt
+        },
+        GB: {
+            type: GraphQLFloat
         }
     })
 })
 
+async function getHour(date, hour) {
+    const query = `SELECT * FROM hour where time="${date} ${hour}:00"`;
+    let row = await db.get(query);
+    return {
+        date: row.time,
+        rx: row.rx,
+        tx: row.tx,
+        rate: row.rate
+    }
+}
+
 async function getDay(date) {
     let row = await db.get(`SELECT * FROM day where time=?`, date);
+    return {
+        date: row.time,
+        rx: row.rx,
+        tx: row.tx,
+        rate: row.rate
+    };
+}
+
+async function getMonth(date) {
+    const query = `SELECT * FROM month where time like "%%${date}%%"`;
+
+    let row = await db.get(query);
     return {
         date: row.time,
         rx: row.rx,
@@ -73,7 +99,7 @@ async function getDays(args) {
     } else {
         rows = await db.all('SELECT * from day');
     }
-    rows = rows.map(row => {
+    return rows.map(row => {
         return {
             date: row.time,
             rx: row.rx,
@@ -81,7 +107,6 @@ async function getDays(args) {
             rate: row.rate
         }
     });
-    return rows;
 }
 
 async function getDistroUsage(args) {
@@ -97,21 +122,37 @@ async function getDistroUsage(args) {
 
     rows = await db.all(query);
 
-    rows = rows.map(row => {
+    return rows.map(row => {
         return {
             date: row.time,
             distro: row.distro,
-            bytes: row.bytes
+            bytes: row.bytes,
+            GB: parseFloat((row.bytes / 1000000000.0).toFixed(3))
         };
     });
-    return rows;
 }
 
 const Query = new GraphQLObjectType({
     name: 'Query',
     fields: () => ({
+        hour: {
+            type: TimeEntry,
+            args: {
+                date: {
+                    name: 'date',
+                    type: GraphQLString
+                },
+                hour: {
+                    name: 'hour',
+                    type: GraphQLInt
+                }
+            },
+            resolve(rootValue, { date, hour }) {
+                return getHour(date, hour);
+            }
+        },
         days: {
-            type: new GraphQLList(DayEntry),
+            type: new GraphQLList(TimeEntry),
             args: {
                 first: {
                     name: 'first',
@@ -129,7 +170,7 @@ const Query = new GraphQLObjectType({
             }
         },
         day: {
-            type: DayEntry,
+            type: TimeEntry,
             args: {
                 date: {
                     name: 'date',
@@ -138,6 +179,18 @@ const Query = new GraphQLObjectType({
             },
             resolve(rootValue, { date }) {
                 return getDay(date);
+            }
+        },
+        month: {
+            type: TimeEntry,
+            args: {
+                date: {
+                    name: 'date',
+                    type: GraphQLString
+                }
+            },
+            resolve(rootValue, {date}) {
+                return getMonth(date);
             }
         },
         distrousage: {
