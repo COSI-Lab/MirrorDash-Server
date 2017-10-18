@@ -92,7 +92,7 @@ async function getDistroUsage(args) {
     let query = `SELECT * FROM distrousage
         ${distro ? `where distro="${distro}"` : ''}
         ${date && distro ? `and time="${date}"` : date ? `where time="${date}"`: ''}
-        ORDER BY id DESC LIMIT 50
+        ORDER BY id DESC LIMIT 120
     `;
 
     rows = await db.all(query);
