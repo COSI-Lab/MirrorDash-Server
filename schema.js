@@ -120,7 +120,7 @@ async function getDistroUsage(args) {
 
     let query = `SELECT * FROM distrousage
         ${distros ? `where distro IN ${distroArr}` : ''}
-        ${date && distro ? `and time="${date}"` : date ? `where time="${date}"`: ''}
+        ${date && distros ? `and time="${date}"` : date ? `where time="${date}"`: ''}
         ORDER BY id DESC LIMIT ${lastDays && distros ? distros.length * lastDays : lastDays ? 40 * lastDays : 120}
     `;
 
