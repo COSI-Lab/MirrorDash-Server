@@ -112,12 +112,14 @@ async function getDays(args) {
 async function getDistroUsage(args) {
     let rows;
 
-    let { distro, date } = args;
+    let { distros, date, lastDays } = args;
+
+    distroArr = `(${distros.map(distro => `"${distro}"`)})`;
 
     let query = `SELECT * FROM distrousage
-        ${distro ? `where distro="${distro}"` : ''}
+        ${distros ? `where distro IN ${distroArr}` : ''}
         ${date && distro ? `and time="${date}"` : date ? `where time="${date}"`: ''}
-        ORDER BY id DESC LIMIT 120
+        ORDER BY id DESC LIMIT ${lastDays && distros ? distros.length * lastDays : lastDays ? 40 * lastDays : 120}
     `;
 
     rows = await db.all(query);
@@ -196,13 +198,19 @@ const Query = new GraphQLObjectType({
         distrousage: {
             type: new GraphQLList(DistroUsageEntry),
             args: {
-                distro: {
+                distros: {
                     name: 'distro',
-                    type: GraphQLString
+                    description: 'A list of distros you want to view, if a single distro, just make an array of one element',
+                    type: new GraphQLList(GraphQLString)
                 },
                 date: {
                     name: 'date',
                     type: GraphQLString
+                },
+                lastDays: {
+                    name: 'lastDays',
+                    description: 'Last N days you wish to view. if blank will return last 3 days',
+                    type: GraphQLInt
                 }
             },
             resolve(rootValue, args) {
