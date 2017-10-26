@@ -110,11 +110,13 @@ async function getDays(args) {
 }
 
 async function getDistroUsage(args) {
-    let rows;
+    let rows, distroArr;
 
     let { distros, date, lastDays } = args;
 
-    distroArr = `(${distros.map(distro => `"${distro}"`)})`;
+    if(distros) {
+        distroArr = `(${distros.map(distro => `"${distro}"`)})`;
+    }
 
     let query = `SELECT * FROM distrousage
         ${distros ? `where distro IN ${distroArr}` : ''}
