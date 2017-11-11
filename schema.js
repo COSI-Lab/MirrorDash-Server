@@ -3,6 +3,7 @@ const {
     GraphQLString,
     GraphQLInt,
     GraphQLFloat,
+    GraphQLBoolean,
     GraphQLObjectType,
     GraphQLList,
     GraphQLSchema
@@ -112,7 +113,7 @@ async function getDays(args) {
 async function getDistroUsage(args) {
     let rows, distroArr;
 
-    let { distros, date, lastDays } = args;
+    let { distros, date, lastDays, sortBiggest } = args;
 
     if(distros) {
         distroArr = `(${distros.map(distro => `"${distro}"`)})`;
@@ -121,19 +122,33 @@ async function getDistroUsage(args) {
     let query = `SELECT * FROM distrousage
         ${distros ? `where distro IN ${distroArr}` : ''}
         ${date && distros ? `and time="${date}"` : date ? `where time="${date}"`: ''}
+
         ORDER BY id DESC LIMIT ${lastDays && distros ? distros.length * lastDays : lastDays ? 40 * lastDays : 120}
     `;
 
     rows = await db.all(query);
 
-    return rows.map(row => {
+    rows = rows.map(row => {
         return {
             date: row.time,
             distro: row.distro,
             bytes: row.bytes,
-            GB: parseFloat((row.bytes / 1000000000.0).toFixed(3))
+            GB: parseFloat((row.bytes / 1000000000.0).toFixed(2))
         };
     });
+
+    if (sortBiggest) {
+        return rows.sort((a,b) => {
+            if (a.bytes < b.bytes) {
+                return 1;
+            } else if (a.bytes > b.bytes) {
+                return -1;
+            }
+            return 0;
+        });
+    } else {
+        return rows;
+    }
 }
 
 const Query = new GraphQLObjectType({
@@ -213,6 +228,10 @@ const Query = new GraphQLObjectType({
                     name: 'lastDays',
                     description: 'Last N days you wish to view. if blank will return last 3 days',
                     type: GraphQLInt
+                },
+                sortBiggest: {
+                    name: 'sortBiggest',
+                    type: GraphQLBoolean
                 }
             },
             resolve(rootValue, args) {
