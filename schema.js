@@ -38,6 +38,15 @@ const TimeEntry = new GraphQLObjectType({
     })
 });
 
+const TotalEntry = new GraphQLObjectType({
+    name: 'TotalEntry',
+    fields: () => ({
+        total: {
+            type: BigInt
+        }
+    })
+});
+
 const DistroUsageEntry = new GraphQLObjectType({
     name: 'DistroUsageEntry',
     fields: () => ({
@@ -89,6 +98,27 @@ async function getMonth(date) {
     };
 }
 
+async function getMonths(args) {
+    let rows;
+    if(args) {
+        if(args.first) {
+            rows = await db.all(`SELECT * FROM month ORDER BY id ASC LIMIT ${args.first}`);
+        } else if(args.last) {
+            rows = await db.all(`SELECT * FROM month ORDER BY id DESC LIMIT ${args.last}`);
+        }
+    } else {
+        rows = await db.all('SELECT * FROM month');
+    }
+    return rows.map(row => {
+        return {
+            date: row.time,
+            rx: row.rx,
+            tx: row.tx,
+            rate: row.rate
+        };
+    });
+}
+
 async function getDays(args) {
     let rows;
     if(args) {
@@ -108,6 +138,39 @@ async function getDays(args) {
             rate: row.rate
         }
     });
+}
+
+async function getHours(args) {
+    let rows;
+    if(args) {
+        if(args.first) {
+            rows = await db.all(`SELECT * FROM hour ORDER BY id ASC LIMIT ${args.first}`);
+        } else if(args.last) {
+            rows = await db.all(`SELECT * FROM hour ORDER BY id DESC LIMIT ${args.last}`);
+        }
+    } else {
+        rows = await db.all('SELECT * from hour');
+    }
+    return rows.map(row => {
+        return {
+            date: row.time,
+            rx: row.rx,
+            tx: row.tx,
+            rate: row.rate
+        }
+    });
+}
+
+async function getTotal() {
+    let rows = await db.all('SELECT * from agg');
+
+    let total = 0;
+
+    for(const row of rows) {
+        total += row.total;
+    }
+
+    return { total };
 }
 
 async function getDistroUsage(args) {
@@ -170,6 +233,24 @@ const Query = new GraphQLObjectType({
                 return getHour(date, hour);
             }
         },
+        months: {
+            type: new GraphQLList(TimeEntry),
+            args: {
+                first: {
+                    name: 'first',
+                    description: 'The first n hours in the db',
+                    type: GraphQLInt
+                },
+                last: {
+                    name: 'last',
+                    description: 'The last n hours in the db',
+                    type: GraphQLInt
+                }
+            },
+            resolve(rootValue, args) {
+                return getMonths(args);
+            }
+        },
         days: {
             type: new GraphQLList(TimeEntry),
             args: {
@@ -186,6 +267,24 @@ const Query = new GraphQLObjectType({
             },
             resolve(rootValue, args) {
                 return getDays(args);
+            }
+        },
+        hours: {
+            type: new GraphQLList(TimeEntry),
+            args: {
+                first: {
+                    name: 'first',
+                    description: 'The first n hours in the db',
+                    type: GraphQLInt
+                },
+                last: {
+                    name: 'last',
+                    description: 'The last n hours in the db',
+                    type: GraphQLInt
+                }
+            },
+            resolve(rootValue, args) {
+                return getHours(args);
             }
         },
         day: {
@@ -210,6 +309,12 @@ const Query = new GraphQLObjectType({
             },
             resolve(rootValue, {date}) {
                 return getMonth(date);
+            }
+        },
+        total: {
+            type: TotalEntry,
+            resolve(rootValue, args) {
+                return getTotal();
             }
         },
         distrousage: {
