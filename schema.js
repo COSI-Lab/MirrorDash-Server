@@ -22,48 +22,62 @@ db.all = promisify(db.all);
 
 const TimeEntry = new GraphQLObjectType({
   name: "TimeEntry",
+  description: "An entry which includeds RX, TX, and rate",
   fields: () => ({
     date: {
-      type: GraphQLString
+      type: GraphQLString,
+      description: DateDescription
     },
     rx: {
-      type: BigInt
+      type: BigInt,
+      description: "Bytes recieved in"
     },
     tx: {
-      type: BigInt
+      type: BigInt,
+      description: "Bytes transferred out"
     },
     rate: {
-      type: GraphQLFloat
+      type: GraphQLFloat,
+      description: "Bandwidth rate in Mbit/s"
     }
   })
 });
 
 const TotalEntry = new GraphQLObjectType({
   name: "TotalEntry",
+  description: "Entry for total bandwidth ever on Mirror",
   fields: () => ({
     total: {
-      type: BigInt
+      type: BigInt,
+      description: "The number in bytes ever passed through Mirror currently"
     }
   })
 });
 
 const DistroUsageEntry = new GraphQLObjectType({
   name: "DistroUsageEntry",
+  description: "Daily entry for individual distros & projects",
   fields: () => ({
     date: {
-      type: GraphQLString
+      type: GraphQLString,
+      description: DateDescription
     },
     distro: {
-      type: GraphQLString
+      type: GraphQLString,
+      description: "The name of the distro / project"
     },
     bytes: {
-      type: BigInt
+      type: BigInt,
+      description: "Bandwidth of this particular distro on a given day in bytes"
     },
     GB: {
-      type: GraphQLFloat
+      type: GraphQLFloat,
+      description: "Bandwidth in GB"
     }
   })
 });
+
+const DateDescription = "Date in format MMM/DD/YYYY";
 
 async function getHour(date, hour) {
   const query = `SELECT * FROM hour where time="${date} ${hour}:00"`;
@@ -239,14 +253,17 @@ const Query = new GraphQLObjectType({
   fields: () => ({
     hour: {
       type: TimeEntry,
+      description: "A time entry for a particular hour",
       args: {
         date: {
           name: "date",
-          type: GraphQLString
+          type: GraphQLString,
+          description: DateDescription
         },
         hour: {
           name: "hour",
-          type: GraphQLInt
+          type: GraphQLInt,
+          description: "An number between 0 and 23 for hours"
         }
       },
       resolve(rootValue, { date, hour }) {
@@ -255,6 +272,7 @@ const Query = new GraphQLObjectType({
     },
     months: {
       type: new GraphQLList(TimeEntry),
+      description: "A list of time entries for a set of months",
       args: {
         first: {
           name: "first",
@@ -273,6 +291,7 @@ const Query = new GraphQLObjectType({
     },
     days: {
       type: new GraphQLList(TimeEntry),
+      description: "A list of time entries for a set of days",
       args: {
         first: {
           name: "first",
@@ -291,6 +310,7 @@ const Query = new GraphQLObjectType({
     },
     hours: {
       type: new GraphQLList(TimeEntry),
+      description: "A list of time entries for a set of hours",
       args: {
         first: {
           name: "first",
@@ -309,10 +329,12 @@ const Query = new GraphQLObjectType({
     },
     day: {
       type: TimeEntry,
+      description: "A time entry for a particular day",
       args: {
         date: {
           name: "date",
-          type: GraphQLString
+          type: GraphQLString,
+          description: DateDescription
         }
       },
       resolve(rootValue, { date }) {
@@ -321,10 +343,12 @@ const Query = new GraphQLObjectType({
     },
     month: {
       type: TimeEntry,
+      description: "A time entry for a particular hour",
       args: {
         date: {
           name: "date",
-          type: GraphQLString
+          type: GraphQLString,
+          description: DateDescription
         }
       },
       resolve(rootValue, { date }) {
@@ -333,12 +357,15 @@ const Query = new GraphQLObjectType({
     },
     total: {
       type: TotalEntry,
+      description: "Total bandwidth on Mirror",
       resolve(rootValue, args) {
         return getTotal();
       }
     },
     distrousage: {
       type: new GraphQLList(DistroUsageEntry),
+      description:
+        "A list of Distrousage entries for a set on distros on a set of days",
       args: {
         distros: {
           name: "distro",
@@ -348,7 +375,8 @@ const Query = new GraphQLObjectType({
         },
         date: {
           name: "date",
-          type: GraphQLString
+          type: GraphQLString,
+          description: DateDescription
         },
         lastDays: {
           name: "lastDays",
@@ -358,6 +386,7 @@ const Query = new GraphQLObjectType({
         },
         sortBiggest: {
           name: "sortBiggest",
+          description: "Sort by largest repos descending",
           type: GraphQLBoolean
         }
       },
