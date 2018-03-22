@@ -1,13 +1,18 @@
 const { promisify } = require("util");
 const sqlite3 = require("sqlite3");
 
-const db = new sqlite3.Database("mirrorband.sqlite");
-db.get = promisify(db.get);
-db.all = promisify(db.all);
+function newDBConnection() {
+  let db = new sqlite3.Database("mirrorband.sqlite");
+  db.get = promisify(db.get);
+  db.all = promisify(db.all);
+  return db;
+}
 
 async function getHour(date, hour) {
+  const db = newDBConnection();
   const query = `SELECT * FROM hour where time="${date} ${hour}:00"`;
   let row = await db.get(query);
+  db.close();
   return {
     date: row.time,
     rx: row.rx,
@@ -17,7 +22,9 @@ async function getHour(date, hour) {
 }
 
 async function getDay(date) {
+  const db = newDBConnection();
   let row = await db.get(`SELECT * FROM day where time=?`, date);
+  db.close();
   return {
     date: row.time,
     rx: row.rx,
@@ -27,9 +34,10 @@ async function getDay(date) {
 }
 
 async function getMonth(date) {
+  const db = newDBConnection();
   const query = `SELECT * FROM month where time like "%%${date}%%"`;
-
   let row = await db.get(query);
+  db.close();
   return {
     date: row.time,
     rx: row.rx,
@@ -39,6 +47,7 @@ async function getMonth(date) {
 }
 
 async function getMonths(args) {
+  const db = newDBConnection();
   let rows;
   if (args) {
     if (args.first) {
@@ -53,6 +62,7 @@ async function getMonths(args) {
   } else {
     rows = await db.all("SELECT * FROM month");
   }
+  db.close();
   return rows.map(row => {
     return {
       date: row.time,
@@ -64,6 +74,7 @@ async function getMonths(args) {
 }
 
 async function getDays(args) {
+  const db = newDBConnection();
   let rows;
   if (args) {
     if (args.first) {
@@ -78,6 +89,7 @@ async function getDays(args) {
   } else {
     rows = await db.all("SELECT * from day");
   }
+  db.close();
   return rows.map(row => {
     return {
       date: row.time,
@@ -89,6 +101,7 @@ async function getDays(args) {
 }
 
 async function getHours(args) {
+  const db = newDBConnection();
   let rows;
   if (args) {
     if (args.first) {
@@ -103,6 +116,7 @@ async function getHours(args) {
   } else {
     rows = await db.all("SELECT * from hour");
   }
+  db.close();
   return rows.map(row => {
     return {
       date: row.time,
@@ -114,8 +128,9 @@ async function getHours(args) {
 }
 
 async function getTotal() {
+  const db = newDBConnection();
   let rows = await db.all("SELECT * from agg");
-
+  db.close();
   let total = 0;
 
   for (const row of rows) {
@@ -126,6 +141,7 @@ async function getTotal() {
 }
 
 async function getDistroUsage(args) {
+  const db = newDBConnection();
   let rows, distroArr;
 
   let { distros, date, lastDays, sortBiggest } = args;
@@ -150,7 +166,7 @@ async function getDistroUsage(args) {
       `;
 
   rows = await db.all(query);
-
+  db.close();
   rows = rows.map(row => {
     return {
       date: row.time,
