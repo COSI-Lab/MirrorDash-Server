@@ -1,0 +1,30 @@
+@import url("https://fonts.googleapis.com/css?family=Open+Sans");
+
+body {
+  background: url("./bg.jpg") no-repeat center center fixed black;
+  background-size: cover;
+  background-repeat: no-repeat;
+  color: white;
+  font-size: 20px;
+  padding: 20px;
+  line-height: 1.6;
+  font-family: "Open Sans", sans-serif;
+}
+
+.container {
+  max-width: 600px;
+}
+
+a {
+  color: white;
+  font-style: italic;
+  font-weight: bold;
+}
+
+@media (max-width: 600px) {
+  .container {
+    /* padding: 0px; */
+    font-size: 18px;
+    line-height: 1.4;
+  }
+}
