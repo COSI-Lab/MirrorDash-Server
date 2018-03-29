@@ -163,6 +163,21 @@ const distrousageQuery = {
   }
 };
 
+const distrousageTotalQuery = {
+  type: DistroUsageEntry,
+  description: "Aggregate bandwidth for a repo",
+  args: {
+    distro: {
+      name: "distro",
+      description: "The name of a distro",
+      type: GraphQLString
+    }
+  },
+  resolve(rootValue, args) {
+    return resolvers.getDistroUsageTotal(args);
+  }
+};
+
 const Query = new GraphQLObjectType({
   name: "Query",
   fields: () => ({
@@ -173,7 +188,8 @@ const Query = new GraphQLObjectType({
     day: dayQuery,
     hour: hourQuery,
     total: totalQuery,
-    distrousage: distrousageQuery
+    distrousage: distrousageQuery,
+    distrousagetotal: distrousageTotalQuery
   })
 });
 

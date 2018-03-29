@@ -190,6 +190,27 @@ async function getDistroUsage(args) {
   }
 }
 
+async function getDistroUsageTotal(args) {
+  const db = newDBConnection();
+  let rows, distroArr;
+
+  let { distro } = args;
+
+  let query = `SELECT time, distro, sum(bytes) FROM distrousage where distro="${distro}"`;
+
+  row = await db.get(query);
+  db.close();
+
+  row["bytes"] = row["sum(bytes)"];
+
+  return {
+    date: row.time,
+    distro: row.distro,
+    bytes: row.bytes,
+    GB: parseFloat((row.bytes / 1e9).toFixed(2))
+  };
+}
+
 module.exports = {
   getHour,
   getDay,
@@ -198,5 +219,6 @@ module.exports = {
   getDays,
   getMonths,
   getTotal,
-  getDistroUsage
+  getDistroUsage,
+  getDistroUsageTotal
 };
